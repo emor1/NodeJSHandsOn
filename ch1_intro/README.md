@@ -1,4 +1,21 @@
 # 1章 イントロダクション
+
+## 目次
+<!-- @import "[TOC]" {cmd="toc" depthFrom=2 depthTo=3 orderedList=false} -->
+
+<!-- code_chunk_output -->
+
+- [1章 イントロダクション](#1章-イントロダクション)
+  - [目次](#目次)
+  - [1.4 JavaScriptの基本](#14-javascriptの基本)
+    - [1.4.1 変数の宣言](#141-変数の宣言)
+    - [1.4.2 関数](#142-関数)
+    - [1.4.3 オブジェクト](#143-オブジェクト)
+    - [1.4.4 配列](#144-配列)
+    - [1.4.5 クラス](#145-クラス)
+
+<!-- /code_chunk_output -->
+
 ## 1.4 JavaScriptの基本
 
 ### 1.4.1 変数の宣言
@@ -179,4 +196,74 @@ Uncaught SyntaxError: Rest element must be last element
 [ 'foo', 'bar', 'baz' ]
 ```
 
-*配列をそうするときは、そのメソッドがミュータブルかイミュータブルかを常に意識する*
+*配列を操作するときは、そのメソッドがミュータブルかイミュータブルかを常に意識する*
+
+例えば、sort()はソート後の配列を返すと同時に**元の配列自体にも同じ変更を加える**
+
+```
+> const arr2 = ['foo', 'bar', 'baz']
+undefined
+> arr2.sort()
+[ 'bar', 'baz', 'foo' ]
+> arr2
+[ 'bar', 'baz', 'foo' ]
+
+> const arr3 = ['a', ...arr2, 'b', 'c']
+undefined
+# 文字数の昇順にソートされるような関数を指定
+> arr3.sort((a,b)=>a.length - b.length)
+[ 'a', 'b', 'c', 'bar', 'baz', 'foo' ]
+> arr3
+[ 'a', 'b', 'c', 'bar', 'baz', 'foo' ]
+```
+
+配列に対する反復処理はfor　もしくはfor..of文で記述する
+```
+> for(let i = 0; i<arr2.length;i++){console.log(arr2[i])}
+bar
+baz
+foo
+undefined
+> for(const e of arr2){console.log(e)}
+bar
+baz
+foo
+```
+forを使わずに、配列のメソッドを使って反復処理を実行できる  
+その場合は引数にコールバック関数を指定して、処理を各要素に適用させる  
+どのメソッドもイミュータブル
+```
+# forEach各要素にコールバック関数を適用
+> for(const e of arr2){console.log(e)}
+bar
+baz
+foo
+undefined
+# map: 各要素をコールバック関数の戻り値に置き換えた配列で返す
+> arr2.forEach(console.log)
+bar 0 [ 'bar', 'baz', 'foo' ]
+baz 1 [ 'bar', 'baz', 'foo' ]
+foo 2 [ 'bar', 'baz', 'foo' ]
+undefined
+> arr2.map(e=>e+e)
+[ 'barbar', 'bazbaz', 'foofoo' ]
+# filter: コールバック関数が真の値を返す要素のみを含む配列を返す
+> arr2.filter(e=>e.startsWith('b'))
+[ 'bar', 'baz' ]
+# find: コールバック関数が真の値を返す最初の要素のみ返す
+> arr2.find(e=>e.startsWith('b'))
+'bar'
+
+# 要素がzで終わればtrueを返す処理
+arr2.find(e=>{
+console.log(e)
+return e.endsWith('z')
+})
+
+bar
+baz
+'baz'
+```
+
+### 1.4.5 クラス
+
