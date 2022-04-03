@@ -1,6 +1,6 @@
-# NodeJSHandsOn
+# Node.jsHandsOn
 
-OreillyのハンズオンNodeJSを軸にNodejsの勉強の記録として制作したディレクトリ。
+OreillyのハンズオンNode.jsを軸にNodejsの勉強の記録として制作したディレクトリ。
 
 各章のREADMEは学習を進めるうえで知らなかったことや復習などのメモ  
 メモは個人的な学習のため誤っている可能性もあり

@@ -43,7 +43,7 @@ const add = (a, b) => { return a+b}
 const add = (a, b) => return a+b
 ```
 
-引数が1つなら()も省略可
+引数が1つなら ()も省略可
 ```
 const add = a =>  a + 5
 ```
@@ -198,7 +198,7 @@ Uncaught SyntaxError: Rest element must be last element
 
 *配列を操作するときは、そのメソッドがミュータブルかイミュータブルかを常に意識する*
 
-例えば、sort()はソート後の配列を返すと同時に**元の配列自体にも同じ変更を加える**
+たとえば、sort()はソート後の配列を返すと同時に**元の配列自体にも同じ変更を加える**
 
 ```
 > const arr2 = ['foo', 'bar', 'baz']
