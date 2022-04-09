@@ -13,6 +13,10 @@
     - [1.4.3 オブジェクト](#143-オブジェクト)
     - [1.4.4 配列](#144-配列)
     - [1.4.5 クラス](#145-クラス)
+    - [1.4.5.1 プロトタイプチェーン](#1451-プロトタイプチェーン)
+    - [1.4.5  等価性](#145--等価性)
+    - [1.4.7 CommonJSモジュール](#147-commonjsモジュール)
+    - [1.4.7.1 module.exportsとrequire()](#1471-moduleexportsとrequire)
 
 <!-- /code_chunk_output -->
 
@@ -268,3 +272,55 @@ baz
 ### 1.4.5 クラス
 
 [クラス](ch1_1.js)
+
+### 1.4.5.1 プロトタイプチェーン
+
+JavaScriptのクラスは、プロトタイプチェーンに基づく継承の仕組みがある。  
+(prototypeチェーンとは、オブジェクトに必要なプロパティや関数がない場合、__proto__が参照するコンストラクタ関数のprototypeオブジェクトにさかのぼって探すことをいいます。)
+
+クラスに定義した、メソッド、コンストラクタ、getter、setterはそのくらすのプロパティに追加される。追加されたプロパティはインスタンスの__proto__にセットされる
+
+```
+> Foo.prototype
+{}
+> Object.getOwnPropertyNames(Foo.prototype)
+[ 'constructor', 'computed', 'publicMethod' ]
+> Foo.prototype.publicMethod
+[Function: publicMethod]
+> fooInstance.__proto__=Foo.prototype
+true
+```
+
+### 1.4.5  等価性
+JavaScriptでは**常に"==="** を使うようにする。
+\==と===では等価性の評価が異なり、==では予測しづらい。
+> 0===' '
+>false
+> 0==' '
+> true
+
+オブジェクトの比較では\==を使用すると、flaseになる
+**同じリテラルで表現される値を比較するときに\===を使う**
+
+### 1.4.7 CommonJSモジュール
+
+Node.jsはCommonJSモジュールとESモジュールに対応している。ESモジュールはまだ実験的な機能なため、CommonJSモジュールを基本的に使う。
+
+### 1.4.7.1 module.exportsとrequire()
+CommonJSモジュールでは、それぞれのJavaScriptファイルが、個別のモジュールとして扱われる。CommonJSモジュールはモジュールレベルのスコープでNodejsが自動的に割り当てるmoduleという変数のexportプロパティを通じて外部に変数や関数を公開する。
+外部モジュールをインポートするときはrequire()関数を使用する。
+[cjs-math.js](cjs-math.js)
+
+利用するときはファイルのパスを指定して、ロードする
+```
+> const math = require('./cjs-math')
+undefined
+> math.add(1,2)
+3
+```
+REPLを開きなおさないと、追加したメソッドを読み込めずエラーになる。requireが1度ロード
+したモジュールをキャッシュする仕組みがある・require.cache()で取得できるオブジェクトにモジュールのパスをキーに保存している。モジュールのパスはrequire.resolve()で取得できるので、delete演算子を使ってキャッシュをクリアする
+```
+> delete require.cache[require.resolve('./cjs-math')]
+true
+```
