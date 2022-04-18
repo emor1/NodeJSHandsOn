@@ -17,6 +17,8 @@
       - [2.1.2.3 イベントループで注意する点](#2123-イベントループで注意する点)
   - [2.2 コールバック](#22-コールバック)
     - [2.2.1 コールバックを利用した非同期APIを実行する](#221-コールバックを利用した非同期apiを実行する)
+    - [2.2.2 エラーハンドリング](#222-エラーハンドリング)
+    - [2.2.3 混ぜるな危険、同期と非同期](#223-混ぜるな危険同期と非同期)
 
 <!-- /code_chunk_output -->
 
@@ -116,3 +118,115 @@ console.log('setTimeoutを実行しました')
 先に「setTimeoutを実行しました」が実行される。
 
 コールバックを利用しているからといって、必ず非同期になるわけではない。
+配列のmap()は、引数のコールバックを使って配列内の要素を変換するが、同期的に実行される
+```
+const array1 = [0,1,2,3]
+
+const array2 = array1.map((element)=>{
+    console.log(`${element}を変換します`)
+    return element*10 //それぞれの要素を10倍
+})
+
+console.log('配列の変換が完了しました',array2)
+
+>node ch2_asynchronous\map_callback_check.js
+0を変換します
+1を変換します
+2を変換します
+3を変換します
+配列の変換が完了しました [ 0, 10, 20, 30 ]
+```
+
+node.jsのfs.readdir()：指定したディレクトリに存在するファイル一覧を返す
+```
+> .editor
+// Entering editor mode (Ctrl+D to finish, Ctrl+C to cancel)
+fs.readdir(
+    '.', //REPLの実行ディレクトリ
+    (err, files)=>{
+        //コールバック
+        console.log('fs.readdir()実行結果')
+        console.log('err',err)
+        console.log('files', files)
+    }
+)
+
+undefined
+> fs.readdir()実行結果
+err null
+files [ '.git', 'ch1_intro', 'ch2_asynchronous', 'README.md' ]
+```
+戻り値がなく、コールバックの引数としてファイル名が渡される  
+エラー発生時には、エラーオブジェクトが入る
+
+
+Node.jsのコールバックの非同期処理の規約
+* コールバックがパラメータの最後にあること
+* コールバックの最初のパラメータが処理中に発生したエラー、２つ目以降のパラメータが処理の結果であること
+
+### 2.2.2 エラーハンドリング
+
+try ... catch ：エラーハンドリング
+
+同期的に発生するエラー処理  
+```
+function parseJSONSync(json){
+    try{
+        //JSON.parse: 文字列をパースシテJSオブジェクトを返す
+        return JSON.parse(json)
+    }catch(err){
+        console.error('エラーをキャッチ', err)
+    }
+}
+
+parseJSONSync('不正なJSON')
+
+>node ch2_asynchronous\2_2_2_1_error_handring.js
+エラーをキャッチ SyntaxError: Unexpected token 不 in JSON at position 0
+```
+
+try..catchではコールバックの中で発生したエラーをハンドリングができないため、コールバックのパラメータとしてエラーを渡すようにしている
+```
+function parseJSONSync(json, callback){
+    try{
+        setTimeout(()=>{
+            callback( JSON.parse(json))
+        }, 1000)
+    }catch(err){
+        console.error('エラーをキャッチ', err)
+        callback({})
+    }
+}
+
+parseJSONSync('不正なJSON', result =>
+    console.log('parse結果', result)
+)
+
+>
+SyntaxError: Unexpected token 不 in JSON at position 0
+```
+エラーをキャッチと表示されれない&rarr; キャッチされることなく、イベントループまで到達した結果。そのため同期の時ではどこで発生したかわかったが、非同期ではどのような経路でエラーが発生したのかがわからない
+
+Node.jsの規約に従い書き直すと次のようになる
+```
+function parseJSONSync(json, callback){
+    setTimeout(() => {
+        try{
+            callback(null, JSON.parse(json))
+        }catch(err){
+            callback(err)
+        }
+    }, 1000);
+
+}
+
+parseJSONSync('不正なJSON',(err, result) =>
+    console.log('parse結果', err,result)
+)
+
+>
+parse結果 SyntaxError: Unexpected token 不 in JSON at position 0
+    at JSON.parse (<anonymous>)
+```
+
+### 2.2.3 混ぜるな危険、同期と非同期
