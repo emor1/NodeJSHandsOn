@@ -19,6 +19,8 @@
     - [2.2.1 コールバックを利用した非同期APIを実行する](#221-コールバックを利用した非同期apiを実行する)
     - [2.2.2 エラーハンドリング](#222-エラーハンドリング)
     - [2.2.3 混ぜるな危険、同期と非同期](#223-混ぜるな危険同期と非同期)
+      - [2.2.3.1 コールバックの実行を非同期化するのに使用するAPI](#2231-コールバックの実行を非同期化するのに使用するapi)
+    - [2.2.4 コールバックヘル](#224-コールバックヘル)
 
 <!-- /code_chunk_output -->
 
@@ -230,3 +232,165 @@ parse結果 SyntaxError: Unexpected token 不 in JSON at position 0
 ```
 
 ### 2.2.3 混ぜるな危険、同期と非同期
+
+遅い非同期処理が発生する場合は、効率を上げるためにキャッシュを使うことがある
+
+[cache.js](2_2_3/cache.js)
+```
+const cache = {}
+
+function parseJSONAsync(json, callback){
+    setTimeout(() => {
+        try{
+            callback(null, JSON.parse(json))
+        }catch(err){
+            callback(err)
+        }
+    }, 1000);
+
+}
+
+function parseJSONAsyncWithCache(json, callback){
+    const cached = cache[json]
+    if(cached){
+        callback(cached.err, cached.result)
+        return
+    }
+    parseJSONAsync(json, (err, result)=>{
+        cache[json]={err, result}
+        callback(err, result)
+    })
+}
+
+parseJSONAsyncWithCache(
+    '{"message":"Hello", "to":"World"}',
+    (err, result)=>{
+        console.log('1回目の結果',err, result)
+        parseJSONAsyncWithCache(
+            '{"message":"Hello", "to":"world"}',
+            (err, result)=>{
+                console.log('2回目の結果', err, result)
+            }
+        )
+    console.log("2回目の呼び出し完了")
+    }
+)
+console.log("1回目の呼び出し完了")
+
+>
+1回目の呼び出し完了
+1回目の結果 null { message: 'Hello', to: 'World' }
+2回目の呼び出し完了
+```
+キャッシュにより、２回目の結果が出力されるが、parseJSONAsyncWithCache()が状況によって、コールバックの実行が同期的や非同期的に変わるため、**JavaScriptのアンチパターン**であることに注意する。
+
+コールバックの呼び出し方を同期か非同期かの一貫性がないと、APIの挙動が予想づらく、原因の特定が困難な不具合の原因になる可能性が高い。
+
+そのため、上記のプログラミングは以下のように記述する。  
+[good_cache.js](2_2_3/good_cache.js)
+```
+const cache2 = {}
+
+function parseJSONAsync(json, callback){
+    setTimeout(() => {
+        try{
+            callback(null, JSON.parse(json))
+        }catch(err){
+            callback(err)
+        }
+    }, 1000);
+
+}
+
+function parseJSONAsyncWithCache(json, callback){
+    const cached = cache2[json]
+    if(cached){
+        // キャッシュに値が存在する場合でも、非同期的にコールバックを実行
+        setTimeout(()=>callback(cached.err, cached.result),0)
+        return
+    }
+    parseJSONAsync(json, (err,result)=>{
+        cache2[json]={err, result}
+        callback(err, result)
+    })
+}
+
+// 1回目の実行
+parseJSONAsyncWithCache(
+    '{"message":"Hello", "to":"World"}',
+    (err, result)=>{
+        console.log('1回目の結果',err, result)
+        parseJSONAsyncWithCache(
+            '{"message":"Hello", "to":"world"}',
+            (err, result)=>{
+                console.log('2回目の結果', err, result)
+            }
+        )
+    console.log("2回目の呼び出し完了")
+    }
+)
+console.log("1回目の呼び出し完了")
+
+>
+1回目の呼び出し完了
+1回目の結果 null { message: 'Hello', to: 'World' }
+2回目の呼び出し完了
+2回目の結果 null { message: 'Hello', to: 'world' }
+```
+
+#### 2.2.3.1 コールバックの実行を非同期化するのに使用するAPI
+setTimeout以外のコールバックのAPI  
+* process.nextTick()
+  * setTimeoutより早く実行される
+  * ブラウザのJavaScriptには存在しない&rarr;queueMicrotask()でキューに積む
+
+[nextTick_callback.js](2_2_3_1/nextTick_callback.js)
+```
+const cache3 = {}
+
+function parseJSONAsync(json, callback){
+    setTimeout(() => {
+        try{
+            callback(null, JSON.parse(json))
+        }catch(err){
+            callback(err)
+        }
+    }, 1000);
+}
+
+function parseJSONAsyncWithCache(json, callback){
+    const cached = cache3[json]
+    if(cached){
+        // Nodejsが対象の場合
+        process.nextTick(()=>callback(cached.err, cached.result))
+        /**
+         * ブラウザの場合
+         * queueMicrotask(()=>callback(cached.err, cached.result))
+         * Promisse.resolve().then(()=>callback(cached.err, cached.result))
+         */
+        return
+    }
+    parseJSONAsync(json, (err, result)=>{
+        cache3[json]={err, result}
+        callback(err, result)
+    })
+}
+
+// 1回目の実行
+parseJSONAsyncWithCache(
+    '{"message":"Hello", "to":"World"}',
+    (err, result)=>{
+        console.log('1回目の結果',err, result)
+        parseJSONAsyncWithCache(
+            '{"message":"Hello", "to":"world"}',
+            (err, result)=>{
+                console.log('2回目の結果', err, result)
+            }
+        )
+    console.log("2回目の呼び出し完了")
+    }
+)
+console.log("1回目の呼び出し完了")
+```
+
+### 2.2.4 コールバックヘル
