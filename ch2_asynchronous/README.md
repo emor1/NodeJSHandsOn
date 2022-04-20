@@ -21,6 +21,7 @@
     - [2.2.3 混ぜるな危険、同期と非同期](#223-混ぜるな危険同期と非同期)
       - [2.2.3.1 コールバックの実行を非同期化するのに使用するAPI](#2231-コールバックの実行を非同期化するのに使用するapi)
     - [2.2.4 コールバックヘル](#224-コールバックヘル)
+  - [2.3 Promise](#23-promise)
 
 <!-- /code_chunk_output -->
 
@@ -394,3 +395,80 @@ console.log("1回目の呼び出し完了")
 ```
 
 ### 2.2.4 コールバックヘル
+コールバックヘル：非同期処理のコールバックの中に非同期処理のコールバックがネストされている状態  
+JavaScriptのアンチパターンの１つ
+
+```
+ayncFunc1(input, (err, result)=>{
+    if(err){
+        // エラーハンドリング
+    }
+    asyncFunc2(result, (err, result)=>{
+        if(err){
+            // エラーハンドリング
+        }
+        asyncFunc3(result, (err, result)=>{
+            if(err){
+                // エラーハンドリング
+            }
+            asyncFunc4(result, (err, result)=>{
+                ...
+            })
+        })
+    })
+})
+```
+ネストが深くなることによって可読性が失われる。
+
+解決方法はコードを分割すること
+```
+function first(arg, callback){
+    asyncFunc1(arg,(err, result)=>{
+        if(err){
+            return callback(err)
+        }
+        second(result, callback)
+    })
+}
+function second(arg, callback){
+    asyncFunc2(arg,(err, result)=>{
+        if(err){
+            return callback(err)
+        }
+        third(result, callback)
+    })
+}
+function third(arg, callback){
+    asyncFunc3(arg,(err, result)=>{
+        if(err){
+            return callback(err)
+        }
+        asyncFunc4(result, callback)
+    })
+}
+
+// 全ての非同期処理を実行
+first(input, (err, result)=>{
+    if(err){
+        // エラーハンドリング
+    }
+    // ...
+})
+```
+しかしerrのチェック箇所が複数残り、完全な解決とは言えない
+
+同じ処理を同期的に書くと
+```
+try{
+    const reslt1=syncFunc1(input)
+    const reslt2=syncFunc2(input)
+    const reslt3=syncFunc3(input)
+    const reslt4=syncFunc4(input)
+    //..
+}catch(err){
+    //エラーハンドリング
+}
+```
+イベントループの中で使うには不適切だが、並行処理の場合では問題はない。
+
+## 2.3 Promise
