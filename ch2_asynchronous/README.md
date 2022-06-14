@@ -22,6 +22,11 @@
       - [2.2.3.1 コールバックの実行を非同期化するのに使用するAPI](#2231-コールバックの実行を非同期化するのに使用するapi)
     - [2.2.4 コールバックヘル](#224-コールバックヘル)
   - [2.3 Promise](#23-promise)
+    - [2.3.1 Promsieインスタンスの生成と状態遷移](#231-promsieインスタンスの生成と状態遷移)
+    - [2.3.2 then(), catch(), finally()](#232-then-catch-finally)
+      - [then()](#then)
+      - [catch()](#catch)
+      - [finally()](#finally)
 
 <!-- /code_chunk_output -->
 
@@ -472,3 +477,117 @@ try{
 イベントループの中で使うには不適切だが、並行処理の場合では問題はない。
 
 ## 2.3 Promise
+Promise: 非同期処理の状態と結果を表現するオブジェクト
+
+上記のコールバックヘルを、Promiseのインスタンスを返すように実装すると
+
+```promise_ex.js
+asyncFunc1(input)
+    .then(asyncFunc2)
+    .then(asyncFunc3)
+    .then(asyncFunc4)
+    .then(result=>{
+        //..
+    })
+    .cathc(err=>{
+        //エラーハンドリング
+    })
+```
+
+### 2.3.1 Promsieインスタンスの生成と状態遷移
+インスタンスの状態
+* 未確定：pending
+* 成功した状態：fulfilled
+* 失敗した状態：rejectedd
+
+[Promiseの実装例](2_3/2_3_1/example_promise1.js)
+```example_promise1.js
+function parseJSONAsync(json){
+    // Promiseインスタンスを生成して返す(このときpending)
+    return new Promise((resolve, reject)=>
+        setTimeout(()=>{
+            try{
+                // fulfilled状態に移行（解決
+                resolve(JSON.parse(json))
+            }catch(err){
+                // reject状態に
+                reject(err)
+            }
+        }, 1000)
+    )
+}
+```
+
+Promiseコンストラクタを使って、Promiseインスタンスを生成している。  
+イメージとしては  
+インスタンスを生成&rarr;[Pending]&rarr;[fulfilled/ rejected]
+
+
+Promiseインスタンスを生成直後は状態が、pendingになり、そのあとに結果が出る
+
+### 2.3.2 then(), catch(), finally()
+
+結果をハンドリングするためのインスタンスメソッド
+
+#### then()
+
+thenはPromiseインスタンスの状態が、fullfilled、またはreject、になった時実行するコールバックを登録するメソッド
+```then.js
+const promise = new Promise()
+
+promise.then(
+    // fulfilledの時
+    value =>{
+        // 成功時の処理
+    },
+    // rejectedの時
+    err =>{
+        // 失敗時の処理
+    }
+)
+```
+
+thenの中の引数
+* **fulfilld**のとき：Promiseインスタンスの値
+* **Rejected**のとき：拒否理由
+
+コールバックは省略可能
+
+Promiseは連鎖で、非同期処理の逐一実行を簡単に実装できる
+
+
+```
+asyncFunc1(input)
+    // asyncFunc1終了後、その結果を引数にasyncFunc2を実行
+    .then(asyncFunc2)
+       // asyncFunc2終了後、その結果を引数にasyncFunc3を実行
+    .then(asyncFunc3)
+   // asyncFunc2終了後、その結果を引数にasyncFunc3を実行
+    .then(asyncFunc3)
+    .then(result =>{
+        // 全ての非同期処理が完了した後の処理
+    })
+    .catch(err=>{
+        // エラーハンドリング
+    })
+```
+
+#### catch()
+非同期処理の結果をハンドリングするインスタンスのメソッド。
+
+then()のコールバックを省略したときにthenの代わりにcatch()を使える
+
+```
+// thenで実装
+const withoutOnFufilld = Promise.reject(new Error('エラー')).then(undefined, ()=>0)
+// catchの使用で同じ処理に
+const catchedPromise = Promise.reject(new Error('エラー')).catch(()=>0)
+```
+
+Promiseチェーンの最後にcatchを書くと、エラーハンドリングを1か所に集約できる(try...catchと似てる)
+
+#### finally()
+
+try, catch, finallyの構文と似てる
+
+
