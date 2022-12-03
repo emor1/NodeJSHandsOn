@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/emor1/NodeJSHandsOn/issues"
   },
-  "homepage": "https://github.com/emor1/NodeJSHandsOn#readme"
+  "homepage": "https://github.com/emor1/NodeJSHandsOn#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
 }

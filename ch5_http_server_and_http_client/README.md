@@ -22,3 +22,40 @@ nodejsにはhttpモジュールが用意されている（httpsの場合はhttps
   * request()だけでは実行されず、end()を実行したタイミングで送信される
   * request()はデフォルトGET、POSTは第二引数で指定できる
     * ` {method:'POST'}`
+
+## 5.3 WebアプリケーションフレームワークとExpress
+
+### 5.3.1 ルーティング
+* Expressの基本機能、ルーティング
+  * リクエストのパスやメソッドに応じて、適切なハンドラに振り分ける
+* app.get()でGETリクエストに対応
+  * POSTならpostと簡単
+  * 対応するハンドラが存在しないリクエストには自動的に404を返す
+  * もしもhttpモジュールのみで行おうとすると、ifの条件分岐が増えて、ハンドラが肥大化してしまう
+
+また同じパスでリクエストが処理が異なる場合は以下のように記述することができる
+```javascript
+  app.route('/path')
+    .get((req, res)=>{
+        // GETリクエストの処理
+    })
+    .post((req, res)=>{
+        // POSTリクエストの処理
+    });
+```
+めっちゃすごい、、簡単にRESTフルなAPI作れるやんけ
+
+また一つのファイルですべてのAPIのルーティングを行うとファイルが肥大化するため、APIをカテゴライズして、モジュールごとに分けてルーティングをすると管理が楽[実装れい](routes/todo.js)、[読み込むばい](./app.js)
+
+これによってパスやクエリに含まれるパラメータの種痘が容易になる、またhttpモジュールを使っている場合は正規表現でパスの確認が行える、Expressの場合は
+```javascript
+app.get('/api/todos/:id(\\d+)',(req, res)=>{
+    const todoID = Number(req.params.id);
+})
+```
+のような形で取得できる
+
+クエリの取得に関しては
+* `/api/todos?completed=true`
+* `/api/todos?completed=false`
+  * などで絞り込みができる
