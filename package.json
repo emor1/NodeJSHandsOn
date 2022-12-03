@@ -1,0 +1,19 @@
+{
+  "name": "handson",
+  "version": "1.0.0",
+  "description": "OreillyのハンズオンNode.jsを軸にNodejsの勉強の記録として制作したディレクトリ。",
+  "main": "index.js",
+  "scripts": {
+    "test": "node ch5_1_server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emor1/NodeJSHandsOn.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/emor1/NodeJSHandsOn/issues"
+  },
+  "homepage": "https://github.com/emor1/NodeJSHandsOn#readme"
+}
