@@ -59,3 +59,35 @@ app.get('/api/todos/:id(\\d+)',(req, res)=>{
 * `/api/todos?completed=true`
 * `/api/todos?completed=false`
   * などで絞り込みができる
+
+### 5.3.2 ミドルウェア
+Expressの機能の多くはミドルウェアで提供されており、公式のパッケージに含まれるもの、含まれていないが公式が開発していたり、サードパーティによって提供されているものもある
+
+ミドルウェア関数
+```javascript
+function expressMiddleware(req, res, next){
+  next()
+}
+```
+
+`app.get()`や`app.post()`の第二引数もミドルう関数
+
+* 汎用的な処理を行うミドルウェアを適用するときは`app.use()`を使う
+  * `app.use(expressMiddleware)`：すべてのパスでミドルウェアを使う
+  * `app.use('/path',expressMiddleware)`：特定のパスに対してミドルウェアを適用
+
+#### 5.3.2.1 静的ファイルの配信
+サーバからブラウザ向けにファイルを配信するとき、Nodejsではリクエストで指定されたパスに存在するファイルをfsモジュールで読みって送る、かなり面倒なため、expressを使うと、`express.static()`で配信が簡単に行える
+
+* `app.use(express.static('public')`
+* `app.use('/path',express.static('public')`
+
+#### 5.3.2.2 リクエストボディのパース
+HTTPリクエストは、ボディを含む場合があるため、ボディをパースしないと見づらい、以下のミドルウェアを使うことで見やすくなる
+* `app.use(express.json())`
+* `app.use(express.urlencoded({extended:true}))`
+
+### 5.3.3 プロいしを介したHTTPリクエストの処理
+HTTPクライアントからのリクエストは直接サーバに来るとは限らない、プリキしを経由することが多い
+
+## 5.4 ToDoアプリケーションの開発
